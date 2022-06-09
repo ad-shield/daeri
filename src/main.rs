@@ -7,7 +7,10 @@ use axum::{
     Router,
 };
 use std::net::SocketAddr;
+use tokio::task;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+use tower::{ServiceBuilder, ServiceExt};
 
 #[tokio::main]
 async fn main() {
@@ -21,7 +24,20 @@ async fn main() {
 
     let app = Router::new()
         .route("/", post(|| async move { "Hello from `POST /`" }))
-        .layer(middleware::from_fn(print_request_response));
+        .layer(
+            ServiceBuilder::new()
+                .layer(middleware::from_fn(print_request_response))
+                .and_then(|body| async {
+                    eprintln!("hello from and_then");
+                    task::spawn_blocking(move || {
+                        std::thread::sleep(std::time::Duration::from_secs(1));
+                    })
+                    .await
+                    .unwrap();
+                    eprintln!("waited long enough");
+                    Ok(body)
+                }),
+        );
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     tracing::debug!("listening on {}", addr);
