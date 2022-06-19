@@ -1,8 +1,8 @@
 [workspace]
 members = [
-  "tower-http/tower-http",
+  "gateway",
   "daeri",
 ]
 
 [patch.crates-io]
-tower-http = { version = "0.3", path = "tower-http/tower-http" }
+tower-http = { version = "0.3", path = "gateway" }

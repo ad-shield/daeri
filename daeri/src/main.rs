@@ -1,11 +1,12 @@
 use axum::{
     body::{Body, Bytes},
     extract::{Extension, Path},
-    http::{Request, StatusCode},
+    http::{Request, StatusCode, Uri},
     middleware::{self, Next},
     response::{IntoResponse, Response},
     routing::{any, get},
     Router,
+    error_handling::HandleError,
 };
 use std::net::SocketAddr;
 use tokio::task;
@@ -14,6 +15,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use daeri::handler::proxy_handler;
 use daeri::Client;
 use tower::ServiceBuilder;
+use tower_http::gateway::Gateway;
 
 // struct ModificationLayer;
 
@@ -54,7 +56,7 @@ use tower::ServiceBuilder;
 // }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), anyhow::Error>{
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG")
@@ -66,10 +68,10 @@ async fn main() {
     tokio::spawn(server());
 
     let client = Client::new();
+    let gateway = Gateway::new(client, Uri::from_static("http://127.0.0.1:3000"))?;
 
-    let app = Router::new().route("/*path", any(proxy_handler)).layer(
+    let app = Router::new().nest("/", HandleError::new(gateway, |_| async { StatusCode::BAD_GATEWAY })).layer(
         ServiceBuilder::new()
-            .layer(Extension(client))
             .layer(middleware::from_fn(print_request_response))
             .and_then(|body| async {
                 eprintln!("hello from and_then");
@@ -89,6 +91,7 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
+    Ok(())
 }
 
 async fn server() {
