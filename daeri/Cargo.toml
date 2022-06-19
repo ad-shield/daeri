@@ -18,3 +18,5 @@ tower = { version = "0.4", features = ["util", "filter"] }
 hyper = { version = "0.14", features = ["full"] }
 tower-http = { version = "0.3", features = ["gateway", "compression-full", "decompression-full"] }
 anyhow = "1.0.58"
+thiserror = "1.0.31"
+http = "0.2.8"
