@@ -1,10 +1,13 @@
+use axum::body::{Bytes, HttpBody};
+use axum::middleware::Next;
+use axum::response::IntoResponse;
 use axum::{error_handling::HandleError, middleware, Router};
-use hyper::{Client, StatusCode, Uri};
+use http::Request;
+use hyper::{Body, Client, StatusCode, Uri};
 use tokio::task;
 use tower::ServiceBuilder;
 use tower_http::gateway::Gateway;
 
-use crate::handler::print_request_response;
 use crate::Error;
 
 pub fn build_proxy() -> Result<Router, Error> {
@@ -18,7 +21,7 @@ pub fn build_proxy() -> Result<Router, Error> {
         )
         .layer(
             ServiceBuilder::new()
-                .layer(middleware::from_fn(print_request_response))
+                .layer(middleware::from_fn(modify))
                 .and_then(|body| async {
                     eprintln!("hello from and_then");
                     task::spawn_blocking(move || {
@@ -32,4 +35,37 @@ pub fn build_proxy() -> Result<Router, Error> {
         );
 
     Ok(app)
+}
+
+enum ModifyStrategy {
+    Identity,
+    Fast,
+    Slow,
+}
+
+fn dispatch(res: &impl IntoResponse) -> ModifyStrategy {
+    todo!()
+}
+
+fn modify_fast(data: Bytes) -> Bytes {
+    todo!()
+}
+
+fn modify_slow(data: Bytes) -> Bytes {
+    todo!()
+}
+
+async fn modify(
+    req: Request<Body>,
+    next: Next<Body>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let res = next.run(req).await;
+
+    let modified = match dispatch(&res) {
+        ModifyStrategy::Identity => res.into_body(),
+        ModifyStrategy::Fast => res.map_data(modify_fast).boxed_unsync(),
+        ModifyStrategy::Slow => res.map_data(modify_slow).boxed_unsync(),
+    };
+
+    Ok(modified)
 }
