@@ -12,7 +12,7 @@ use crate::Error;
 
 pub fn build_proxy() -> Result<Router, Error> {
     let client = Client::new();
-    let gateway = Gateway::new(client, Uri::from_static("http://127.0.0.1:3000"))?;
+    let gateway = Gateway::new(client, Uri::from_static("http://127.0.0.1:4000"))?;
 
     let app = Router::new()
         .nest(
@@ -23,13 +23,13 @@ pub fn build_proxy() -> Result<Router, Error> {
             ServiceBuilder::new()
                 .layer(middleware::from_fn(modify))
                 .and_then(|body| async {
-                    eprintln!("hello from and_then");
+                    eprintln!("hypothetically modifying result");
                     task::spawn_blocking(move || {
                         std::thread::sleep(std::time::Duration::from_secs(1));
                     })
                     .await
                     .unwrap();
-                    eprintln!("waited long enough");
+                    eprintln!("protection has finished");
                     Ok(body)
                 }),
         );
@@ -44,7 +44,8 @@ enum ModifyStrategy {
 }
 
 fn dispatch(res: &impl IntoResponse) -> ModifyStrategy {
-    todo!()
+    // TODO
+    ModifyStrategy::Identity
 }
 
 fn modify_fast(data: Bytes) -> Bytes {
