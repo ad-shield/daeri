@@ -2,6 +2,8 @@
 members = [
   # "gateway",
   "daeri",
+  "shield",
+  "adshield-utils",
 ]
 
 [patch.crates-io]

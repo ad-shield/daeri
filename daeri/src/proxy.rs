@@ -9,6 +9,7 @@ use tower::ServiceBuilder;
 use tower_http::gateway::Gateway;
 
 use crate::Error;
+use shield::{InMemoryCacheStorage, ShieldLayer};
 
 pub fn build_proxy() -> Result<Router, Error> {
     let client = Client::new();
@@ -21,6 +22,7 @@ pub fn build_proxy() -> Result<Router, Error> {
         )
         .layer(
             ServiceBuilder::new()
+                .layer(ShieldLayer::new(InMemoryCacheStorage::new()))
                 .layer(middleware::from_fn(modify))
                 .and_then(|body| async {
                     eprintln!("hypothetically modifying result");
