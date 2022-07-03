@@ -1,8 +1,8 @@
 [workspace]
 members = [
-  "gateway",
+  # "gateway",
   "daeri",
 ]
 
 [patch.crates-io]
-tower-http = { version = "0.3", path = "gateway" }
+tower-http = { git = "https://github.com/lilyball/tower-http.git", branch = "gateway" }
